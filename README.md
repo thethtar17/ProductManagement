@@ -55,21 +55,32 @@ $env:Jwt__Key = [Convert]::ToBase64String([byte[]](1..32 | ForEach-Object { Get-
 
 Production deployments must provide the key through secure configuration and use HTTPS. The application rejects startup when the key, issuer, or audience is missing, and validates all three values when processing tokens.
 
+Before starting the backend locally, set the key in the same PowerShell session:
+
+```powershell
+$env:Jwt__Key = [Convert]::ToBase64String([byte[]](1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+dotnet run --project .\backend\management.csproj
+```
+
 ### Frontend API URL
 
-The frontend reads the backend origin from `VUE_APP_API_BASE_URL` and uses relative `/api/...` paths throughout the application. For local development, create `frontend/.env.development.local` with:
+The frontend reads the backend origin from `VUE_APP_API_BASE_URL` and uses relative `/api/...` paths throughout the application. Copy `frontend/.env.example` to `frontend/.env.development.local` for local development:
 
 ```dotenv
 VUE_APP_API_BASE_URL=http://localhost:5004
 ```
 
-For deployment, set `VUE_APP_API_BASE_URL` to the HTTPS API origin before building the frontend.
+The Vue development server proxies `/api` requests to this origin. For each deployment environment, set `VUE_APP_API_BASE_URL` to that environment's HTTPS API origin before running `npm run build`.
 
 ### CORS and translation
 
 Development CORS allows `http://localhost:8080`. For deployment, configure at least one trusted frontend origin with `Cors__AllowedOrigins__0` (for example, `https://app.example.com`); the backend refuses to start without an allowed origin and never enables wildcard CORS.
 
-Translation is available at `POST /api/translate/translate` and requires Google Cloud Translation credentials to be available through the Google Cloud client configuration.
+Translation is available at `POST /api/translate/translate` and requires Google Cloud Translation credentials. Set `GOOGLE_APPLICATION_CREDENTIALS` to a service-account JSON file path in local development, or use the deployment platform's workload identity/secret integration in production:
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\secure\google-translation-service-account.json"
+```
 
 ## Setup and running the project
 
