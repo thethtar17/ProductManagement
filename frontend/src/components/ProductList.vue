@@ -41,7 +41,7 @@ export default {
     async fetchProducts() {
   try {
     console.log("Token:", this.token); // Log the token
-    const response = await axios.get("http://localhost:5004/api/products", {
+    const response = await axios.get("/api/products", {
       headers: {
         Authorization: `Bearer ${this.token}`,
       },
@@ -55,7 +55,7 @@ export default {
 async addToCart(productId) {
       try {
         await axios.post(
-          "http://localhost:5004/api/products/add-to-cart",
+          "/api/products/add-to-cart",
           { productId, quantity: 1 }, // Default quantity is 1
           {
             headers: {

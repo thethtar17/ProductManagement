@@ -86,7 +86,7 @@ export default {
   methods: {
     async fetchProducts() {
       try {
-        const response = await axios.get("http://localhost:5004/api/products");
+        const response = await axios.get("/api/products");
         this.products = response.data; // Ensure this matches the API response format
       } catch (error) {
         console.error("Error fetching products:", error);

@@ -52,7 +52,7 @@ export default {
     async fetchUserProducts() {
       if (this.token) {
         try {
-          const response = await axios.get("http://localhost:5004/api/products/current-user-products", {
+          const response = await axios.get("/api/products/current-user-products", {
             headers: {
               Authorization: `Bearer ${this.token}`,
             },
@@ -72,7 +72,7 @@ export default {
   async deleteProduct(productId) {
       if (confirm("Are you sure you want to delete this product?")) {
         try {
-          await axios.delete(`http://localhost:5004/api/products/${productId}`, {
+          await axios.delete(`/api/products/${productId}`, {
             headers: {
               Authorization: `Bearer ${this.token}`,
             },

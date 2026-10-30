@@ -1,37 +1,37 @@
-﻿//using Microsoft.AspNetCore.Mvc;
-//using Google.Cloud.Translation.V2;
-//using management.Models;
-//namespace management.Controllers
-//{
-//    [Route("api/translate")]
-//    [ApiController]
-//    public class TranslationController : ControllerBase
-//    {
-//        private readonly TranslationClient _translationClient;
+using Google.Cloud.Translation.V2;
+using management.Models;
+using Microsoft.AspNetCore.Mvc;
 
-//        public TranslationController()
-//        {
-//            _translationClient = TranslationClient.Create();
-//        }
+namespace management.Controllers
+{
+    [Route("api/translate")]
+    [ApiController]
+    public class TranslationController : ControllerBase
+    {
+        private readonly TranslationClient _translationClient;
 
-//        [HttpPost("translate")]
-//        public async Task<IActionResult> Translate([FromBody] TranslationRequest request)
-//        {
-//            try
-//            {
-//                var response = await _translationClient.TranslateTextAsync(
-//                    request.Text,
-//                    request.TargetLanguage,
-//                    request.SourceLanguage);
+        public TranslationController()
+        {
+            _translationClient = TranslationClient.Create();
+        }
 
-//                return Ok(new { TranslatedText = response.TranslatedText });
-//            }
-//            catch (Exception ex)
-//            {
-//                return BadRequest(new { Message = ex.Message });
-//            }
-//        }
-//    }
+        [HttpPost("translate")]
+        public async Task<IActionResult> Translate([FromBody] TranslationRequest request)
+        {
+            if (request == null ||
+                string.IsNullOrWhiteSpace(request.Text) ||
+                string.IsNullOrWhiteSpace(request.TargetLanguage) ||
+                string.IsNullOrWhiteSpace(request.SourceLanguage))
+            {
+                return BadRequest("Text, source language, and target language are required.");
+            }
 
-  
-//}
+            var response = await _translationClient.TranslateTextAsync(
+                request.Text,
+                request.TargetLanguage,
+                request.SourceLanguage);
+
+            return Ok(new { response.TranslatedText });
+        }
+    }
+}

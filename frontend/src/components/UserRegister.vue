@@ -30,11 +30,10 @@ export default {
   methods: {
     async register() {
       try {
-        const response = await axios.post("http://localhost:5004/api/user/register", {
+        const response = await axios.post("/api/user/register", {
           username: this.username, // Matches backend "Username"
           email: this.email,       // Matches backend "Email"
           password: this.password, // Matches backend "Password"
-          role: "USER",            // Optional, backend defaults to "USER" if not provided
         });
         alert("Registration successful!");
         console.log(response.data);

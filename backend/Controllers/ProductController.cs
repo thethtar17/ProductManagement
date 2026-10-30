@@ -39,17 +39,19 @@ namespace management.Controllers
         [HttpGet("current-user-products")]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetCurrentUserProducts()
         {
-            // Get the current user's email from the claims
-            //var userEmail = User.FindFirstValue(ClaimTypes.Email);
-            var userEmail = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userEmail == null)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
             {
                 return Unauthorized("User not authenticated.");
             }
 
+            if (!int.TryParse(userId, out var userIds))
+            {
+                return BadRequest("Invalid user ID.");
+            }
           
             var userProducts = await _context.Products
-                .Where(p => p.User.Email == userEmail)
+                .Where(p => p.UserId == userIds)
                .Select(p => new
                {
                    p.Id,
@@ -111,7 +113,7 @@ namespace management.Controllers
                 return BadRequest("Product data is null.");
             }
 
-            var userId = User.FindFirstValue("userId");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized("User not authenticated.");
@@ -141,7 +143,7 @@ namespace management.Controllers
                 Name = productDto.Name,
                 Price = productDto.Price,
                 Stock = productDto.Stock,
-                UserId = int.Parse(userId),  // Assuming userId is an integer
+                UserId = userIds,
                 ImageData = imageData,
                 ImageMimeType = imageMimeType,
             };
@@ -158,7 +160,6 @@ namespace management.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            // Get the current user's identifier (e.g., email or ID)
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
@@ -166,9 +167,13 @@ namespace management.Controllers
                 return Unauthorized("User not authenticated.");
             }
 
-            // Find the product by ID and ensure it belongs to the current user
+            if (!int.TryParse(userId, out var userIds))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
             var product = await _context.Products
-                .Where(p => p.User.Email== userId && p.Id == id)
+                .Where(p => p.UserId == userIds && p.Id == id)
                 .FirstOrDefaultAsync();
 
             if (product == null)
@@ -193,10 +198,22 @@ namespace management.Controllers
                 return BadRequest("Product data is null.");
             }
 
-            var product = await _context.Products.FindAsync(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            if (!int.TryParse(userId, out var userIds))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userIds);
             if (product == null)
             {
-                return NotFound("Product not found.");
+                return NotFound("Product not found or you do not have permission to update it.");
             }
 
             // Update product properties
@@ -246,17 +263,32 @@ namespace management.Controllers
         }
 
 
+        [Authorize]
         [HttpPost("add-to-cart")]
         public async Task<IActionResult> AddToCart([FromBody] AddToCartDto addToCartDto)
         {
+            if (addToCartDto == null)
+            {
+                return BadRequest("Cart item data is required.");
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            if (!int.TryParse(userId, out _))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
             try
             {
-                var userId = User.FindFirstValue("userId");
-
                 await _cartService.AddToCartAsync(userId, addToCartDto.ProductId, addToCartDto.Quantity);
                 return Ok(new { Message = "Item added to cart successfully!" });
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(new { Message = ex.Message });
             }
@@ -266,16 +298,19 @@ namespace management.Controllers
         [HttpGet("current-user-cart")]
         public async Task<ActionResult<IEnumerable<CartProductDto>>> GetCurrentUserCart()
         {
-            // Get the current user's email from the claims
-            var userEmail = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userEmail == null)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
             {
                 return Unauthorized("User not authenticated.");
             }
 
-            // Fetch the user's cart items
+            if (!int.TryParse(userId, out var userIds))
+            {
+                return BadRequest("Invalid user ID.");
+            }
+
             var userCart = await _context.CartItems
-                .Where(c => c.User.Email == userEmail)
+                .Where(c => c.UserId == userIds)
                 .Select(c => new
                 {
                     c.Product.Id,

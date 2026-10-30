@@ -45,7 +45,7 @@
     methods: {
       async translateText() {
         try {
-          const response = await axios.post('http://localhost:5004/translate', {
+          const response = await axios.post('/api/translate/translate', {
             text: this.textToTranslate,
             sourceLanguage: this.sourceLanguage,
             targetLanguage: this.targetLanguage

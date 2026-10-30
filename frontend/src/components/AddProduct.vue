@@ -60,7 +60,7 @@ export default {
 
       try {
         const response = await axios.post(
-          "http://localhost:5004/api/products/add",
+          "/api/products/add",
           formData,
           {
             headers: {

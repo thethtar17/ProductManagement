@@ -34,7 +34,7 @@
     },
     async created() {
       try {
-        const response = await axios.get("http://localhost:5004/api/products/current-user-cart", {
+        const response = await axios.get("/api/products/current-user-cart", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

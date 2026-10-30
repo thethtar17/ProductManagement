@@ -43,17 +43,12 @@ namespace management.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.Role))
-            {
-                request.Role = "USER"; // Assign default role
-            }
-
             var user = new User
             {
                 Username = request.Username,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Role = request.Role
+                Role = "USER"
             };
 
             _context.Users.Add(user);
@@ -94,7 +89,13 @@ namespace management.Controllers
     
         private string GenerateJwtToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var keyValue = _configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT signing key is not configured.");
+            var issuer = _configuration["Jwt:Issuer"]
+                ?? throw new InvalidOperationException("JWT issuer is not configured.");
+            var audience = _configuration["Jwt:Audience"]
+                ?? throw new InvalidOperationException("JWT audience is not configured.");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyValue));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
@@ -103,7 +104,7 @@ namespace management.Controllers
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim(ClaimTypes.Name, user.Username),
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Include the user's ID
-        new Claim("role", user.Role), // Dynamically include the user's role
+        new Claim(ClaimTypes.Role, user.Role),
          new Claim("email", user.Email),
          new Claim("userId", user.Id.ToString())
 
@@ -112,6 +113,8 @@ namespace management.Controllers
     };
 
             var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
                 expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpirationMinutes"])),
                 signingCredentials: creds,
                 claims: claims);

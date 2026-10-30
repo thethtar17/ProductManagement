@@ -72,7 +72,7 @@ export default {
   methods: {
     async fetchProduct(id) {
       try {
-        const response = await axios.get(`http://localhost:5004/api/products/${id}`);
+        const response = await axios.get(`/api/products/${id}`);
         this.editableProduct = response.data;
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -96,7 +96,7 @@ export default {
       }
 
       try {
-        await axios.put(`http://localhost:5004/api/products/${this.editableProduct.id}`, formData, {
+        await axios.put(`/api/products/${this.editableProduct.id}`, formData, {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "multipart/form-data",

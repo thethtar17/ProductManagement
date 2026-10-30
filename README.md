@@ -40,23 +40,36 @@ Update the connection string for your SQL Server instance:
     "DefaultConnection": "Server=localhost;Database=Management;Trusted_Connection=True;TrustServerCertificate=True;"
   },
   "Jwt": {
-    "Key": "replace-with-a-long-random-secret",
+    "Issuer": "ProductManagement",
+    "Audience": "ProductManagement.Client",
     "ExpirationMinutes": 60
   }
 }
 ```
 
-For anything other than local development, do not commit a real JWT key or database password to source control. Use user secrets, environment variables, or your deployment platform's secret manager instead. The JWT key must be long enough for the configured HMAC signing algorithm.
+The JWT signing key is intentionally not stored in `appsettings.json`. Set `Jwt__Key` through .NET user secrets, an environment variable, or your deployment platform's secret manager. It must be a random value of at least 32 characters. For example, in PowerShell:
+
+```powershell
+$env:Jwt__Key = [Convert]::ToBase64String([byte[]](1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+Production deployments must provide the key through secure configuration and use HTTPS. The application rejects startup when the key, issuer, or audience is missing, and validates all three values when processing tokens.
 
 ### Frontend API URL
 
-The frontend currently sends API requests to:
+The frontend reads the backend origin from `VUE_APP_API_BASE_URL` and uses relative `/api/...` paths throughout the application. For local development, create `frontend/.env.development.local` with:
 
-```text
-http://localhost:5004
+```dotenv
+VUE_APP_API_BASE_URL=http://localhost:5004
 ```
 
-If the backend runs on another host or port, update the Axios `baseURL` in `frontend/src/App.vue` and any other frontend components that define an API URL.
+For deployment, set `VUE_APP_API_BASE_URL` to the HTTPS API origin before building the frontend.
+
+### CORS and translation
+
+Development CORS allows `http://localhost:8080`. For deployment, configure at least one trusted frontend origin with `Cors__AllowedOrigins__0` (for example, `https://app.example.com`); the backend refuses to start without an allowed origin and never enables wildcard CORS.
+
+Translation is available at `POST /api/translate/translate` and requires Google Cloud Translation credentials to be available through the Google Cloud client configuration.
 
 ## Setup and running the project
 
